@@ -1,0 +1,17 @@
+{
+  "name": "agent-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "本地 Agent 统一管理面板：扫描 Claude Code / Codex / Trae CN 的 agent、skill、MCP 与模型开销，并提供只读 HTTP API",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "scan": "node src/cli.js scan",
+    "scan:json": "node src/cli.js scan --json",
+    "serve": "node src/server.js",
+    "start": "node scripts/start.mjs",
+    "test": "node --test test/lib.test.js test/scan.test.js test/api.test.js"
+  }
+}

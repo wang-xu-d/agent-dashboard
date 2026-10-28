@@ -1,0 +1,15 @@
+node_modules/
+data/
+*.log
+
+# 本地浏览器验证残留
+.tmp-edge/
+.screenshots/
+snap.tmp.json
+
+# IDE / 编辑器产物
+.trae-html-share-packages/
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

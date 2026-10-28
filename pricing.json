@@ -1,0 +1,8 @@
+{
+  "_README": "单价单位：美元/百万 token。models 里的模型优先；未配置的模型会自动用 Claude cost-state 反推；都拿不到时用 default（前端会标注“按默认价估算”）。把 default 设为 null 可关闭兜底。",
+  "_verified": "本机实测：cost-state 里 claude-opus-5 / gpt-6.1-sol[1m] / qwen3.8-max[1m] 三者的 tokens×单价 完全对上 5/25（缓存读 0.1×=0.5，缓存写 1.25×=6.25），说明当前中转站对所有模型统一定价 $5 / $25。",
+  "cacheReadMultiplier": 0.1,
+  "cacheWriteMultiplier": 1.25,
+  "default": { "input": 5, "output": 25 },
+  "models": {}
+}

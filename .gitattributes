@@ -1,0 +1,5 @@
+# 批处理文件必须保持 CRLF，否则在 cmd.exe 里可能出问题
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 其余文本交给 core.autocrlf / 编辑器处理
