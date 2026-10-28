@@ -32,14 +32,10 @@
 
 ## 界面预览
 
-截图待补（欢迎 PR）。把图片放到 `docs/screenshots/` 后，取消下面注释即可显示：
-
-<!--
 | 总览 | 模型开销 |
 | --- | --- |
 | ![总览](docs/screenshots/overview.png) | ![模型开销](docs/screenshots/cost.png) |
 | ![Skill 矩阵](docs/screenshots/skills.png) | ![MCP 清单](docs/screenshots/mcps.png) |
--->
 
 想立刻看到界面：`npm start`，浏览器打开 <http://127.0.0.1:7788>。
 
