@@ -1,13 +1,47 @@
-# Agent Dashboard · 扫描层 + 只读 API + 可视化面板
+# Agent Dashboard
 
-本机装了哪些 Agent（Claude Code / Codex / Trae CN）、各自有哪些 skill 和 MCP、这些会话烧了多少 token 和钱——这些信息散落在十几个 JSON / TOML / JSONL 文件里。这个项目把它们归一化成一份统一视图，并暴露成本地只读 HTTP API，附带一个零依赖的可视化面板。
+> 本地 Agent 统一管理面板：把 Claude Code / Codex / Trae CN 的 Agent、Skill、MCP 和 token 成本汇总到一屏。零依赖、只读、纯本机。
 
-**当前进度：扫描层 + API + 四个前端视图已完成（含测试）。**
+一台电脑上通常同时装着几个 AI 编程 Agent，它们的信息散落在十几个 JSON / TOML / JSONL 文件里：
 
-- 零依赖：只用 Node 内置模块（`node:http`、`node:fs`），没有构建步骤，不需要 `npm install`
-- 只读：不修改任何 Agent 的配置和日志
-- 增量：按字节偏移解析日志，第二次扫描只读新增部分（本机 67 个会话文件全量 1.5s，增量 ~0.7s）
-- 不伪造数据：拿不到单价就返回 `null`，不写 0；平台不写日志就明确标 `usageAvailable: false`
+- **Skill** 分布在 `~/.claude/skills`、`~/.claude/plugins/{marketplaces,cache}`、`~/.codex/skills`、`~/.trae-cn/skills` 和各自的插件市场目录，同名 skill 可能装了多份；
+- **MCP** 分别写在 `~/.claude.json`、`~/.codex/config.toml`、`%APPDATA%\Trae*\User\mcp.json`，格式各不相同，还有一份只存在于运行时缓存里；
+- **token 与费用** 埋在几十个 `.jsonl` 会话日志中，Claude 另有一份 `cost-state` 账单快照，Codex 和 Trae CN 的口径又不一样。
+
+这个项目把这些文件归一化成统一模型（Agent / Skill / MCP / 用量事实），通过一个只读 HTTP API 暴露出来，并配一个零依赖的可视化面板。**不修改任何 Agent 的配置和日志，不上传任何数据，所有计算都在本机完成。**
+
+## 能做什么
+
+| 能力 | 说明 |
+| --- | --- |
+| 统一盘点 | 三个平台的安装状态、版本、provider、skill / MCP 数量，一屏看完 |
+| 跨平台对照 | 同名 skill 在哪些平台装过、来源（用户 / 内置 / 插件 / 市场）、是否被禁用、用过几次 |
+| 成本拆解 | 按模型 / 平台 / 项目拆 token 与美元，缓存读写加权计价，自算成本与 Claude 账单对账 |
+| MCP 审计 | transport、scope、工具数、启动命令与 URL；env / headers / 启动参数统一脱敏 |
+| 增量扫描 | 按字节偏移只读新增日志（本机 67 个会话文件：全量 1.5s，增量 ~0.7s） |
+| 零依赖 | 只用 Node 内置模块，没有 `npm install`、没有构建步骤、没有前端框架 |
+
+**当前进度：扫描层 + 只读 API + 四个前端视图已完成，26 个测试覆盖纯函数、扫描层与 HTTP 接口。**
+
+几条硬约束：
+
+- **只读**：不写任何 Agent 的配置文件，不碰会话日志
+- **增量**：记录每个日志文件的字节偏移，第二次只读新增部分
+- **不伪造数据**：拿不到单价就返回 `null` 而不是 0；平台不写日志就明确标 `usageAvailable: false`
+- **脱敏**：所有 env / headers / URL / MCP 启动参数进入 API 前先过 `lib/mask.js`
+
+## 界面预览
+
+截图待补（欢迎 PR）。把图片放到 `docs/screenshots/` 后，取消下面注释即可显示：
+
+<!--
+| 总览 | 模型开销 |
+| --- | --- |
+| ![总览](docs/screenshots/overview.png) | ![模型开销](docs/screenshots/cost.png) |
+| ![Skill 矩阵](docs/screenshots/skills.png) | ![MCP 清单](docs/screenshots/mcps.png) |
+-->
+
+想立刻看到界面：`npm start`，浏览器打开 <http://127.0.0.1:7788>。
 
 ## 快速开始
 
