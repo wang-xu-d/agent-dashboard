@@ -628,3 +628,27 @@ tbody tr:hover td { background: rgba(255, 255, 255, .022); }
     scroll-behavior: auto !important;
   }
 }
+
+/* ---------- 演示站横幅 ----------
+   只由 scripts/build-demo.mjs 注入到静态演示页；本地真实运行时 DOM 里没有这个节点。 */
+.demo-strip {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 9px 24px;
+  font-size: 12px; line-height: 1.5; color: var(--fg-dim);
+  background: linear-gradient(90deg, rgba(56, 189, 248, .10), rgba(167, 139, 250, .08) 60%, transparent);
+  border-bottom: 1px solid var(--border);
+}
+.demo-strip-tag {
+  flex: none; padding: 2px 9px; border-radius: 999px;
+  background: var(--accent-dim); color: var(--accent);
+  border: 1px solid var(--accent-line);
+  font-size: 11px; font-weight: 600; letter-spacing: .02em;
+}
+.demo-strip strong { color: var(--fg); font-weight: 600; }
+.demo-strip-link { margin-left: auto; color: var(--info); font-weight: 500; white-space: nowrap; }
+
+@media (max-width: 720px) {
+  .demo-strip { padding: 8px 14px; }
+  .demo-strip-link { margin-left: 0; }
+}
+

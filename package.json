@@ -12,6 +12,8 @@
     "scan:json": "node src/cli.js scan --json",
     "serve": "node src/server.js",
     "start": "node scripts/start.mjs",
-    "test": "node --test test/lib.test.js test/scan.test.js test/api.test.js"
+    "demo": "node scripts/build-demo.mjs",
+    "demo:serve": "node scripts/preview-demo.mjs",
+    "test": "node --test test/lib.test.js test/scan.test.js test/api.test.js test/demo.test.js"
   }
 }

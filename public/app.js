@@ -164,8 +164,35 @@ function debounce(fn, ms = 160) {
 }
 
 // ---------- 数据 ----------
+// 演示模式：GitHub Pages 上没有 Node 服务，构建脚本会把接口结果预生成成 api/*.json，
+// 这里只改写请求地址；本地真实运行时不存在 window.__DEMO__。
+const DEMO = Boolean(globalThis.__DEMO__);
+
+/** 静态演示按「距今天数」把时间窗映射到预生成的 7/30/90/全部 四份汇总。 */
+function demoSummaryPath(params) {
+  const from = params.get('from');
+  const agent = params.get('agent') || 'all';
+  let days = 0;
+  if (from) {
+    const t = Date.parse(`${from}T00:00:00`);
+    if (Number.isFinite(t)) days = Math.round((Date.now() - t) / 86_400_000) + 1;
+  }
+  const bucket = days && days <= 8 ? '7' : days && days <= 31 ? '30' : days && days <= 92 ? '90' : 'all';
+  return `api/usage-${bucket}-${agent}.json`;
+}
+
+function demoPath(path) {
+  const [p, qs = ''] = path.split('?');
+  if (p === '/api/snapshot') return 'api/snapshot.json';
+  if (p === '/api/usage/summary') return demoSummaryPath(new URLSearchParams(qs));
+  if (p === '/api/pricing') return 'api/pricing.json';
+  if (p === '/api/scan') throw new Error('演示站是构建时生成的静态快照，不能重新扫描');
+  throw new Error(`演示站没有这个接口：${p}`);
+}
+
 async function api(path, options) {
-  const res = await fetch(path, { headers: { accept: 'application/json' }, ...options });
+  const target = DEMO ? demoPath(path) : path;
+  const res = await fetch(target, { headers: { accept: 'application/json' }, ...options });
   let json;
   try {
     json = await res.json();
@@ -280,6 +307,9 @@ function render() {
 }
 
 function renderError(message) {
+  const hint = DEMO
+    ? '<p class="dim">演示站读取静态 JSON 失败：构建产物可能未生成，本地可运行 <code>npm run demo</code> 重新生成。</p>'
+    : '<p class="dim">确认 <code>npm run serve</code> 正在运行，然后重试。</p>';
   $$('[data-root]').forEach((root) => {
     root.innerHTML = `
       <section class="card">
@@ -287,7 +317,7 @@ function renderError(message) {
           <svg class="ico" aria-hidden="true"><use href="#i-warn"/></svg>
           <b>读取本地数据失败</b>
           <p>${esc(message)}</p>
-          <p class="dim">确认 <code>npm run serve</code> 正在运行，然后重试。</p>
+          ${hint}
           <button class="btn btn-ghost" type="button" data-retry>重试</button>
         </div>
       </section>`;
@@ -1381,6 +1411,10 @@ function mcpCard(m) {
 
 // ---------- 刷新 ----------
 async function rescan() {
+  if (DEMO) {
+    toast('演示站是构建时生成的静态快照，无法重新扫描；本地 npm start 可用真实数据', true);
+    return;
+  }
   const btn = $('#btn-refresh');
   if (btn?.classList.contains('is-busy')) return;
   btn?.classList.add('is-busy');

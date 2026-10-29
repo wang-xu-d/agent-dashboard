@@ -2,6 +2,9 @@ node_modules/
 data/
 *.log
 
+# 静态演示站构建产物（由 scripts/build-demo.mjs 生成，GitHub Actions 负责发布）
+demo/
+
 # 本地浏览器验证残留
 .tmp-edge/
 .screenshots/

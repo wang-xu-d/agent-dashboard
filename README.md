@@ -21,7 +21,7 @@
 | 增量扫描 | 按字节偏移只读新增日志（本机 67 个会话文件：全量 1.5s，增量 ~0.7s） |
 | 零依赖 | 只用 Node 内置模块，没有 `npm install`、没有构建步骤、没有前端框架 |
 
-**当前进度：扫描层 + 只读 API + 四个前端视图已完成，26 个测试覆盖纯函数、扫描层与 HTTP 接口。**
+**当前进度：扫描层 + 只读 API + 四个前端视图已完成，27 个测试覆盖纯函数、扫描层、HTTP 接口与演示站构建。**
 
 几条硬约束：
 
@@ -39,6 +39,16 @@
 
 想立刻看到界面：`npm start`，浏览器打开 <http://127.0.0.1:7788>。
 
+## 在线演示
+
+不装 Node 也能看：**<https://wang-xu-d.github.io/agent-dashboard/>**
+
+演示站用的是**构建时合成的示例数据**（虚构的 skill、MCP 与会话日志），不是任何人的本机信息。生成方式是 `npm run demo`：在临时目录造一套 fixture → 跑一遍真实的扫描层 → 把 snapshot 和「7 / 30 / 90 天 / 全部 × 四个平台」的用量汇总预生成成静态 JSON（`demo/api/*.json`），前端检测到 `window.__DEMO__` 后自动把 `/api/*` 请求改写到这些文件。
+
+因为是静态快照，演示站里的「重新扫描」只会弹提示；时间窗与平台筛选仍然可用（命中预生成好的对应文件）。想看自己的真实数据，请在本机 `npm start`。
+
+发布方式：仓库 **Settings → Pages → Source 选 “GitHub Actions”**（首次需要手动开启一次），之后每次 push `main` 都会由 `.github/workflows/pages.yml` 重新构建并发布。
+
 ## 快速开始
 
 要求 Node ≥ 20（本机 22.12 实测）。
@@ -49,7 +59,9 @@ npm run scan                 # 增量扫描 + 打印人读摘要
 npm run scan -- --full       # 清空索引后全量重扫
 npm run scan:json            # 输出完整 snapshot JSON（前端/管道用）
 npm run serve                # 只起服务：打开 http://127.0.0.1:7788
-npm test                     # 26 个测试：纯函数 / 扫描层 / HTTP 接口
+npm run demo                 # 用合成示例数据生成静态演示站到 demo/
+npm run demo:serve           # 本地预览 demo/（默认 http://127.0.0.1:7800）
+npm test                     # 27 个测试：纯函数 / 扫描层 / HTTP 接口 / 演示站构建
 ```
 
 Windows 下也可以直接**双击根目录的 `start.bat`**（内部调用 `node scripts/start.mjs`，找不到 Node 会提示安装）。需要参数时在 cmd 里跑，脚本直接读参数：
@@ -93,10 +105,14 @@ Trae CN 1.107.1     · 68 skill · 6 MCP（含 4 个平台内置工具集）
 start.bat                Windows 双击启动（调用 scripts/start.mjs）
 scripts/
   start.mjs              一键启动：按需扫描 → 起服务 → 健康检查 → 打开浏览器
+  build-demo.mjs         生成静态演示站：合成 fixture → 跑真实扫描 → 输出 demo/
+  preview-demo.mjs       本地预览 demo/（纯静态，和 GitHub Pages 行为一致）
+.github/
+  workflows/pages.yml    推 main 后自动构建并发布演示站到 GitHub Pages
 public/
   index.html             单页骨骼（4 个 view + SVG 图标 sprite）
   styles.css             设计令牌与全部组件样式（含响应式与 reduced-motion）
-  app.js                 路由 / 渲染 / 手写 SVG 折线图 / 客户端筛选
+  app.js                 路由 / 渲染 / 手写 SVG 折线图 / 客户端筛选 / demo 模式
   favicon.svg
 src/
   config.js              路径与端口（全部可用 DASH_* 环境变量覆盖）
@@ -116,11 +132,13 @@ test/
   lib.test.js            纯函数单测
   scan.test.js           fixture 目录跑真实扫描：去重、增量、成本、对账
   api.test.js            起真实服务进程打所有端点 + 静态资源/路径穿越
+  demo.test.js           跑演示站构建：产物齐全、数据量合理、无本机路径泄漏
   helpers/fixture.js     测试用最小数据集
-data/                   运行时生成（已 gitignore）
+demo/                    静态演示站构建产物（已 gitignore，Actions 发布到 Pages）
+data/                    运行时生成（已 gitignore）
   index.json             每个日志文件读到哪个字节 + 平台上报成本
   facts.ndjson           用量事实表（append-only，同 key 后写覆盖）
-pricing.json            单价表（可手改）
+pricing.json             单价表（可手改）
 ```
 
 ## 归一化模型
@@ -173,6 +191,7 @@ costUSD = (input + cacheRead × 0.1 + cacheWrite × 1.25) × priceIn / 1e6
 实现要点：
 
 - 首屏只打 `GET /api/snapshot`；成本视图再按时间窗打 `GET /api/usage/summary`，筛选全部在客户端完成
+- 静态演示站复用同一份前端：`window.__DEMO__` 为真时把 `/api/*` 改写到预生成的 `api/*.json`，并禁用「重新扫描」
 - 折线图为手写 SVG：悬停十字线 + tooltip，聚焦后可用 `←/→` 逐日查看、`Esc` 关闭；每张图下方都有「查看每日数据表」兜底
 - 所有来自文件的内容都经 `esc()` 转义；窗口 resize 时才重绘图表（180ms 防抖）
 - 响应式：1440 / 1024 / 768 / 375 四档验证；窄屏下侧栏变成顶部横向 tab，宽表格保留可读列宽并横向滚动，矩阵有「可横向滚动」提示
@@ -263,6 +282,7 @@ costUSD = (input + cacheRead × 0.1 + cacheWrite × 1.25) × priceIn / 1e6
 5. **只在 Windows 上实测过**（路径探测、`%APPDATA%`、CLI 版本探测都是按 Windows 写的；其他平台未验证）。
 6. **内置 vs 用户 MCP 的判定是启发式**：Trae 运行时缓存里 `integrated_*` 或以 `d.agentKinds.size === 0` 判定为内置，极少数情况可能误判，可通过 `includeBuiltin=1` 自行核对。
 7. **Claude `cost-state` 只保留每个文件最后一条**（它是累计快照，不会丢信息；但如果文件被人工截断，上报值可能缺失）。
+8. **演示站是构建时快照**：GitHub Pages 上只有静态 JSON，不能重新扫描，数据也不会随时间更新；每次 push `main` 时由 Actions 重新构建。
 
 ## 后续可做
 
